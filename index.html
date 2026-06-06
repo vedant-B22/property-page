@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The Property — A Rare Offering</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400;1,600&family=Jost:wght@200;300;400&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+<style>
+  /* ── CSS Variables ── */
+  :root {
+    --bg: #f5f0e8;
+    --bg-deep: #e8dfd0;
+    --gold: #C9A84C;
+    --silk: #faf7f2;
+    --brown: #5c3d2e;
+    --brown-deep: #3a2318;
+    --text: #2e1f0f;
+    --gold-border: rgba(201, 168, 76, 0.4);
+    --brown-border: rgba(92, 61, 46, 0.2);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* ── Vesa Studios Badge ── */
+  #vesa-badge {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 8000;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    background: rgba(250,247,242,0.85);
+    border: 1px solid var(--gold-border);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    text-decoration: none;
+    transition: background 0.25s ease, border-color 0.25s ease;
+  }
+  #vesa-badge:hover {
+    background: rgba(250,247,242,0.98);
+    border-color: var(--gold);
+  }
+  #vesa-badge .badge-label {
+    font-family: 'Jost', sans-serif;
+    font-weight: 200;
+    font-size: 0.55rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--brown);
+    line-height: 1;
+  }
+  #vesa-badge .badge-name {
+    font-family: 'Jost', sans-serif;
+    font-weight: 400;
+    font-size: 0.65rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--brown-deep);
+    line-height: 1;
+  }
+  #vesa-badge .badge-dot {
+    width: 4px;
+    height: 4px;
+    background: var(--gold);
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  html { scroll-behavior: auto; }
+
+  body {
+    background: var(--bg);
+    font-family: 'Jost', sans-serif;
+    font-weight: 300;
+    color: var(--text);
+    cursor: none;
+    overflow-x: hidden;
+  }
+
+  /* ── Custom Cursor ── */
+  #cursor {
+    position: fixed;
+    width: 36px;
+    height: 36px;
+    border: 1.5px solid var(--gold);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 10000;
+    transform: translate(-50%, -50%);
+    transition: transform 0.08s ease, width 0.25s ease, height 0.25s ease, background 0.25s ease, border-color 0.25s ease;
+    mix-blend-mode: multiply;
+  }
+  #cursor.hover {
+    width: 56px;
+    height: 56px;
+    background: rgba(201,168,76,0.08);
+  }
+  #cursor-dot {
+    position: fixed;
+    width: 4px;
+    height: 4px;
+    background: var(--gold);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 10001;
+    transform: translate(-50%, -50%);
+  }
+
+  /* ── Film Grain ── */
+  #grain {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.03;
+  }
+
+  /* ── Loading Screen ── */
+  #loading-screen {
+    position: fixed;
+    inset: 0;
+    background: var(--silk);
+    z-index: 9000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 28px;
+    transition: opacity 0.8s ease;
+  }
+  #loading-screen.fade-out {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .loading-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: clamp(1.6rem, 3vw, 2.4rem);
+    color: var(--brown-deep);
+    letter-spacing: 0.08em;
+  }
+  .loading-subtitle {
+    font-family: 'Jost', sans-serif;
+    font-weight: 200;
+    font-size: 0.7rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--brown);
+  }
+  .progress-track {
+    width: min(320px, 70vw);
+    height: 1px;
+    background: var(--brown-border);
+    position: relative;
+    overflow: visible;
+  }
+  .progress-bar {
+    height: 100%;
+    background: var(--gold);
+    width: 0%;
+    transition: width 0.05s linear;
+    position: relative;
+  }
+  .progress-bar::after {
+    content: '';
+    position: absolute;
+    right: -1px;
+    top: -2px;
+    width: 5px;
+    height: 5px;
+    background: var(--gold);
+    border-radius: 50%;
+  }
+  #progress-label {
+    font-family: 'Jost', sans-serif;
+    font-weight: 200;
+    font-size: 0.65rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--brown);
+  }
+
+  /* ── Scroll Container ── */
+  #scroll-container {
+    position: relative;
+  }
+
+  /* The tall zone that drives the animation */
+  #animation-zone {
+    height: calc(452px * 3px);   /* ~1356px — will be set in JS */
+    position: relative;
+  }
+
+  /* Sticky canvas wrapper */
+  #canvas-sticky {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  #film-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    background: var(--silk);
+  }
+
+  /* Hero overlay (fades in over last 30 frames) */
+  #hero-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    padding-bottom: 10vh;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+    background: linear-gradient(to top, rgba(58,35,24,0.45) 0%, transparent 60%);
+  }
+  #hero-overlay.visible { opacity: 1; pointer-events: auto; }
+
+  .hero-headline {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-weight: 300;
+    font-size: clamp(2.8rem, 6vw, 6rem);
+    color: var(--silk);
+    text-align: center;
+    line-height: 1.05;
+    letter-spacing: 0.02em;
+    text-shadow: 0 2px 40px rgba(58,35,24,0.4);
+    margin-bottom: 1rem;
+  }
+  .hero-tagline {
+    font-family: 'Jost', sans-serif;
+    font-weight: 200;
+    font-size: clamp(0.65rem, 1.2vw, 0.85rem);
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: rgba(250,247,242,0.75);
+    text-shadow: 0 1px 20px rgba(58,35,24,0.5);
+  }
+
+  /* scroll hint */
+  .scroll-hint {
+    position: absolute;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    opacity: 0;
+    animation: fadeInHint 1s ease 1.5s forwards;
+  }
+  @keyframes fadeInHint {
+    to { opacity: 0.6; }
+  }
+  .scroll-hint span {
+    font-family: 'Jost', sans-serif;
+    font-weight: 200;
+    font-size: 0.6rem;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--brown);
+  }
+  .scroll-arrow {
+    width: 1px;
+    height: 40px;
+    background: linear-gradient(to bottom, var(--gold), transparent);
+    animation: scrollPulse 2s ease-in-out infinite;
+  }
+  @keyframes scrollPulse {
+    0%, 100% { opacity: 0.4; transform: scaleY(1); }
+    50% { opacity: 1; transform: scaleY(0.6); }
+  }
+
+  /* ── Post-Animation Sections ── */
+  #page-content {
+    background: var(--bg);
+    opacity: 0;
+    transition: opacity 1s ease 0.3s;
+  }
+  #page-content.revealed { opacity: 1; }
+
+  /* ── Stats Section ── */
+  .stats-section {
+    padding: clamp(64px, 10vw, 120px) clamp(24px, 6vw, 80px);
+    background: var(--bg);
+  }
+  .section-eyebrow {
+    font-family: 'Jost', sans-serif;
+    font-weight: 200;
+    font-size: 0.65rem;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: var(--brown);
+    margin-bottom: 48px;
+    text-align: center;
+  }
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--gold-border);
+    border: 0.5px solid var(--gold-border);
+    max-width: 960px;
+    margin: 0 auto;
+  }
+  @media (max-width: 640px) {
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  .stat-card {
+    background: var(--bg-deep);
+    padding: 40px 32px;
+    position: relative;
+  }
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 0.5px;
+    background: var(--gold);
+  }
+  .stat-label {
+    font-family: 'Jost', sans-serif;
+    font-weight: 200;
+    font-size: 0.6rem;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--brown);
+    margin-bottom: 16px;
+  }
+  .stat-value {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 300;
+    font-size: clamp(1.8rem, 3vw, 2.6rem);
+    color: var(--brown-deep);
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+  .stat-unit {
+    font-family: 'Jost', sans-serif;
+    font-weight: 200;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    color: var(--brown);
+    opacity: 0.7;
+  }
+
+  /* ── Description Section ── */
+  .description-section {
+    padding: clamp(64px, 10vw, 120px) clamp(24px, 6vw, 80px);
+    background: var(--bg-deep);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  @media (max-width: 768px) {
+    .description-section { grid-template-columns: 1fr; gap: 40px; }
+  }
+  .desc-headline {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-weight: 300;
+    font-size: clamp(2rem, 4vw, 3.2rem);
+    color: var(--brown-deep);
+    line-height: 1.15;
+    letter-spacing: 0.01em;
+  }
+  .desc-body {
+    font-family: 'Jost', sans-serif;
+    font-weight: 300;
+    font-size: 0.9rem;
+    line-height: 1.9;
+    color: var(--text);
+    opacity: 0.85;
+  }
+  .desc-body p + p { margin-top: 1.2em; }
+  .gold-rule {
+    width: 40px;
+    height: 0.5px;
+    background: var(--gold);
+    margin: 28px 0;
+  }
+
+  /* ── Contact Section ── */
+  .contact-section {
+    padding: clamp(64px, 10vw, 120px) clamp(24px, 6vw, 80px);
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .contact-card {
+    background: rgba(250, 247, 242, 0.6);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 0.5px solid var(--gold-border);
+    padding: clamp(40px, 6vw, 72px);
+    width: min(560px, 100%);
+    position: relative;
+  }
+  .contact-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 32px; right: 32px;
+    height: 0.5px;
+    background: var(--gold);
+  }
+  .contact-headline {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-weight: 300;
+    font-size: clamp(1.6rem, 3vw, 2.2rem);
+    color: var(--brown-deep);
+    margin-bottom: 8px;
+    text-align: center;
+  }
+  .contact-sub {
+    font-family: 'Jost', sans-serif;
+    font-weight: 200;
+    font-size: 0.65rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--brown);
+    text-align: center;
+    margin-bottom: 40px;
+  }
+  .form-group {
+    margin-bottom: 24px;
+  }
+  .form-label {
+    display: block;
+    font-family: 'Jost', sans-serif;
+    font-weight: 200;
+    font-size: 0.6rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--brown);
+    margin-bottom: 8px;
+  }
+  .form-input, .form-select, .form-textarea {
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-bottom: 0.5px solid var(--brown-border);
+    padding: 8px 0 10px;
+    font-family: 'Jost', sans-serif;
+    font-weight: 300;
+    font-size: 0.85rem;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.3s ease;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+  .form-select {
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23C9A84C' opacity='.5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 4px center;
+    padding-right: 20px;
+  }
+  .form-textarea { resize: none; height: 72px; }
+  .form-input:focus, .form-select:focus, .form-textarea:focus {
+    border-bottom-color: var(--gold);
+  }
+  .form-input::placeholder, .form-textarea::placeholder { color: rgba(92,61,46,0.3); }
+  .submit-btn {
+    width: 100%;
+    margin-top: 12px;
+    padding: 16px 32px;
+    background: transparent;
+    border: 0.5px solid var(--gold-border);
+    font-family: 'Jost', sans-serif;
+    font-weight: 200;
+    font-size: 0.65rem;
+    letter-spacing: 0.45em;
+    text-transform: uppercase;
+    color: var(--brown-deep);
+    cursor: none;
+    position: relative;
+    overflow: hidden;
+    transition: color 0.4s ease, border-color 0.4s ease;
+  }
+  .submit-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--gold);
+    transform: translateX(-100%);
+    transition: transform 0.4s ease;
+    z-index: 0;
+  }
+  .submit-btn:hover::before { transform: translateX(0); }
+  .submit-btn:hover { color: var(--silk); border-color: var(--gold); }
+  .submit-btn span { position: relative; z-index: 1; }
+
+  /* ── Footer ── */
+  footer {
+    background: var(--bg-deep);
+    border-top: 0.5px solid var(--gold-border);
+    padding: clamp(40px, 6vw, 64px) clamp(24px, 6vw, 80px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+  .footer-logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-weight: 300;
+    font-size: 1.2rem;
+    letter-spacing: 0.1em;
+    color: var(--brown-deep);
+  }
+  .footer-text {
+    font-family: 'Jost', sans-serif;
+    font-weight: 200;
+    font-size: 0.6rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--brown);
+    opacity: 0.6;
+  }
+  .footer-divider {
+    width: 24px;
+    height: 0.5px;
+    background: var(--gold);
+    opacity: 0.5;
+  }
+</style>
+</head>
+<body>
+
+<!-- Film Grain SVG -->
+<svg id="grain" xmlns="http://www.w3.org/2000/svg">
+  <filter id="noise" x="0%" y="0%" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" stitchTiles="stitch" result="noiseOut"/>
+    <feColorMatrix type="saturate" values="0" in="noiseOut" result="grayNoise"/>
+    <feBlend in="SourceGraphic" in2="grayNoise" mode="overlay"/>
+  </filter>
+  <rect width="100%" height="100%" filter="url(#noise)" opacity="1"/>
+</svg>
+
+<!-- Custom Cursor -->
+<div id="cursor"></div>
+<div id="cursor-dot"></div>
+
+<!-- Vesa Studios Badge -->
+<a id="vesa-badge" href="https://vesastudios.site" target="_blank" rel="noopener">
+  <div class="badge-dot"></div>
+  <div>
+    <div class="badge-label">Built by</div>
+    <div class="badge-name">Vesa Studios</div>
+  </div>
+</a>
+
+<!-- Loading Screen -->
+<div id="loading-screen">
+  <div class="loading-title">The Property</div>
+  <div class="loading-subtitle">Preparing your experience</div>
+  <div class="progress-track">
+    <div class="progress-bar" id="progress-bar"></div>
+  </div>
+  <div id="progress-label">Loading frames — 0%</div>
+</div>
+
+<!-- Main Scroll Container -->
+<div id="scroll-container">
+  <!-- Animation Zone -->
+  <div id="animation-zone">
+    <div id="canvas-sticky">
+      <canvas id="film-canvas"></canvas>
+      <!-- Hero overlay for last frames -->
+      <div id="hero-overlay">
+        <h1 class="hero-headline">A Residence<br>Without Compare</h1>
+        <p class="hero-tagline">An Exceptional Estate — Available for Private Acquisition</p>
+      </div>
+      <!-- Initial scroll hint -->
+      <div class="scroll-hint" id="scroll-hint">
+        <span>Scroll</span>
+        <div class="scroll-arrow"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Post-animation content -->
+  <div id="page-content">
+
+    <!-- Stats Section -->
+    <section class="stats-section">
+      <p class="section-eyebrow">The Numbers</p>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Total Area</div>
+          <div class="stat-value">8,400</div>
+          <div class="stat-unit">Square Feet</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Bedrooms</div>
+          <div class="stat-value">6</div>
+          <div class="stat-unit">Private Suites</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Asking Price</div>
+          <div class="stat-value">14.5M</div>
+          <div class="stat-unit">USD — By Appointment</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Location</div>
+          <div class="stat-value" style="font-size: clamp(1.2rem,2vw,1.8rem);">Bel Air</div>
+          <div class="stat-unit">Los Angeles, California</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Description Section -->
+    <div style="background: var(--bg-deep);">
+      <div class="description-section">
+        <div>
+          <p class="section-eyebrow" style="text-align:left;">The Provenance</p>
+          <h2 class="desc-headline">Where silence<br>becomes architecture</h2>
+          <div class="gold-rule"></div>
+        </div>
+        <div class="desc-body">
+          <p>Conceived by a visionary studio and completed in 2019, this residence occupies a secluded ridge above the city — commanding uninterrupted views from the Pacific to the canyon floor below.</p>
+          <p>Every material was chosen for its relationship to light: raw limestone that shifts from pale gold at dawn to warm amber at dusk; custom bronze hardware patinated to echo the surrounding hillside; wide-plank French oak underfoot, unfinished and honest.</p>
+          <p>The estate includes a subterranean screening room, a climate-controlled wine cellar for 3,200 bottles, a full spa suite, and a guest pavilion accessible via covered walkway — all set within 1.8 acres of drought-tolerant landscaping by a Pritzker-shortlisted garden practice.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contact Section -->
+    <section class="contact-section">
+      <p class="section-eyebrow">Enquire</p>
+      <div class="contact-card">
+        <h2 class="contact-headline">Request a Private Showing</h2>
+        <p class="contact-sub">Exclusive representation · By appointment only</p>
+        <div class="form-group">
+          <label class="form-label">Full Name</label>
+          <input type="text" class="form-input" placeholder="Your name" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <input type="email" class="form-input" placeholder="your@email.com" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Interest</label>
+          <select class="form-select">
+            <option value="">Select an option</option>
+            <option>Private Viewing</option>
+            <option>Investment Inquiry</option>
+            <option>General Information</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Message</label>
+          <textarea class="form-textarea" placeholder="Your enquiry…"></textarea>
+        </div>
+        <button class="submit-btn"><span>Submit Enquiry</span></button>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+      <div class="footer-logo">The Property</div>
+      <div class="footer-divider"></div>
+      <div class="footer-text">Confidential. For qualified purchasers only.</div>
+      <div class="footer-text">© 2025 — All Rights Reserved</div>
+      <div class="footer-divider" style="margin-top:28px;"></div>
+      <div class="footer-text" style="margin-top:16px; font-size:0.6rem; letter-spacing:0.3em;">
+        Designed &amp; built by
+        <a href="https://vesastudios.site" target="_blank" rel="noopener"
+           style="color:var(--gold); text-decoration:none; letter-spacing:0.3em;">VESA STUDIOS</a>
+      </div>
+    </footer>
+  </div><!-- /page-content -->
+</div><!-- /scroll-container -->
+
+<script>
+/* ═══════════════════════════════════════════════
+   CURSOR
+═══════════════════════════════════════════════ */
+const cursor = document.getElementById('cursor');
+const cursorDot = document.getElementById('cursor-dot');
+let mouseX = 0, mouseY = 0, cursorX = 0, cursorY = 0;
+
+document.addEventListener('mousemove', e => {
+  mouseX = e.clientX;
+  mouseY = e.clientY;
+  cursorDot.style.left = mouseX + 'px';
+  cursorDot.style.top  = mouseY + 'px';
+});
+
+// Lagged cursor
+(function animateCursor() {
+  cursorX += (mouseX - cursorX) * 0.15;
+  cursorY += (mouseY - cursorY) * 0.15;
+  cursor.style.left = cursorX + 'px';
+  cursor.style.top  = cursorY + 'px';
+  requestAnimationFrame(animateCursor);
+})();
+
+// Hover scale
+document.addEventListener('mouseover', e => {
+  if (e.target.matches('button, a, input, select, textarea, .submit-btn')) {
+    cursor.classList.add('hover');
+  }
+});
+document.addEventListener('mouseout', e => {
+  if (e.target.matches('button, a, input, select, textarea, .submit-btn')) {
+    cursor.classList.remove('hover');
+  }
+});
+
+
+/* ═══════════════════════════════════════════════
+   FRAME ANIMATION ENGINE
+═══════════════════════════════════════════════ */
+const TOTAL_FRAMES = 452;
+const SCROLL_PX_PER_FRAME = 12;
+const HERO_START_FRAME = 420; // fade in hero over last ~30 frames
+
+const canvas = document.getElementById('film-canvas');
+const ctx    = canvas.getContext('2d');
+const progressBar   = document.getElementById('progress-bar');
+const progressLabel = document.getElementById('progress-label');
+const loadingScreen = document.getElementById('loading-screen');
+const heroOverlay   = document.getElementById('hero-overlay');
+const pageContent   = document.getElementById('page-content');
+const animationZone = document.getElementById('animation-zone');
+const scrollHint    = document.getElementById('scroll-hint');
+
+// Set animation zone height
+animationZone.style.height = (TOTAL_FRAMES * SCROLL_PX_PER_FRAME) + 'px';
+
+// Resize canvas to viewport
+function resizeCanvas() {
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+let frames = [];      // base64 data URLs
+let images = [];      // preloaded Image objects
+let ready  = false;
+let currentFrame = 0;
+let rafPending   = false;
+
+/* ── Load ZIP ── */
+async function loadZip() {
+  // Fetch the uploaded ZIP
+  const response = await fetch('https://drive.google.com/uc?export=download&id=1cnZ9dA4qTNFar6PbgADcL8wyRlkKFiUS');
+  if (!response.ok) throw new Error('Could not fetch ZIP file');
+  const zipData = await response.arrayBuffer();
+
+  const zip = await JSZip.loadAsync(zipData);
+
+  // Collect and sort frame files
+  const entries = [];
+  zip.forEach((path, file) => {
+    if (!file.dir && path.match(/\.png$/i)) {
+      entries.push({ path, file });
+    }
+  });
+  // Sort by frame number
+  entries.sort((a, b) => {
+    const na = parseInt(a.path.replace(/\D+/g, ''), 10);
+    const nb = parseInt(b.path.replace(/\D+/g, ''), 10);
+    return na - nb;
+  });
+
+  const total = Math.min(entries.length, TOTAL_FRAMES);
+
+  // Convert to base64 data URLs
+  frames = new Array(total);
+  for (let i = 0; i < total; i++) {
+    const blob = await entries[i].file.async('blob');
+    frames[i]  = await blobToDataURL(blob);
+    const pct  = Math.round(((i + 1) / total) * 100);
+    progressBar.style.width  = pct + '%';
+    progressLabel.textContent = `Loading frames — ${pct}%`;
+  }
+
+  // Preload Image objects
+  progressLabel.textContent = 'Preparing canvas…';
+  await preloadImages();
+
+  // Done!
+  loadingScreen.classList.add('fade-out');
+  setTimeout(() => { loadingScreen.style.display = 'none'; }, 900);
+  ready = true;
+  drawFrame(0);
+  pageContent.classList.add('revealed');
+  scrollHint.style.opacity = '0.6';
+}
+
+function blobToDataURL(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload  = e => resolve(e.target.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+function preloadImages() {
+  return new Promise(resolve => {
+    let loaded = 0;
+    images = frames.map((src, i) => {
+      const img = new Image();
+      img.onload = () => {
+        loaded++;
+        if (loaded === frames.length) resolve();
+      };
+      img.onerror = () => { loaded++; if (loaded === frames.length) resolve(); };
+      img.src = src;
+      return img;
+    });
+  });
+}
+
+/* ── Draw a frame ── */
+function drawFrame(idx) {
+  const img = images[idx];
+  if (!img || !img.complete) return;
+
+  // Fill background first
+  ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--silk').trim() || '#faf7f2';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Object-fit: cover (fill full screen, crop edges)
+  const cw = canvas.width, ch = canvas.height;
+  const iw = img.naturalWidth  || img.width  || cw;
+  const ih = img.naturalHeight || img.height || ch;
+  const scale = Math.max(cw / iw, ch / ih);
+  const dx = (cw - iw * scale) / 2;
+  const dy = (ch - ih * scale) / 2;
+  ctx.drawImage(img, dx, dy, iw * scale, ih * scale);
+}
+
+/* ── Scroll handler ── */
+window.addEventListener('scroll', () => {
+  if (!ready || rafPending) return;
+  rafPending = true;
+  requestAnimationFrame(() => {
+    rafPending = false;
+    const zone   = animationZone;
+    const top    = zone.offsetTop;
+    const height = zone.offsetHeight - window.innerHeight;
+    const scrollY = Math.max(0, window.scrollY - top);
+    const maxScroll = Math.max(1, height);
+    const progress = Math.min(1, scrollY / maxScroll);
+    const idx = Math.min(frames.length - 1, Math.floor(progress * frames.length));
+
+    if (idx !== currentFrame) {
+      currentFrame = idx;
+      drawFrame(idx);
+    }
+
+    // Hero overlay
+    if (idx >= HERO_START_FRAME) {
+      const t = (idx - HERO_START_FRAME) / (frames.length - 1 - HERO_START_FRAME);
+      heroOverlay.style.opacity = Math.min(1, t * 2).toString();
+      heroOverlay.classList.add('visible');
+    } else {
+      heroOverlay.style.opacity = '0';
+    }
+
+    // Hide scroll hint after user scrolls
+    if (scrollY > 40) scrollHint.style.opacity = '0';
+  });
+}, { passive: true });
+
+// Kick off loading
+loadZip().catch(err => {
+  console.error('ZIP load error:', err);
+  progressLabel.textContent = 'Error loading frames. Please refresh.';
+  progressLabel.style.color = '#c0392b';
+});
+</script>
+</body>
+</html>
